@@ -4,7 +4,6 @@
 
 import anthropic
 import datetime
-import os
 import sys
 from pathlib import Path
 
@@ -44,24 +43,20 @@ def fetch_news() -> str:
 
     print(f"🔍 ニュースを収集中... ({today})", flush=True)
 
-    response_text = ""
-
-    with client.messages.stream(
+    response = client.messages.create(
         model="claude-opus-4-6",
         max_tokens=4096,
         tools=[
-            {"type": "web_search_20260209", "name": "web_search"},
+            {"type": "web_search_20250305", "name": "web_search"},
         ],
         messages=[{"role": "user", "content": prompt}],
-    ) as stream:
-        for event in stream:
-            if (
-                event.type == "content_block_delta"
-                and event.delta.type == "text_delta"
-            ):
-                text = event.delta.text
-                print(text, end="", flush=True)
-                response_text += text
+    )
+
+    response_text = ""
+    for block in response.content:
+        if block.type == "text":
+            print(block.text, flush=True)
+            response_text += block.text
 
     return response_text
 

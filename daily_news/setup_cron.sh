@@ -4,6 +4,7 @@
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PYTHON=$(which python3)
 SCRIPT="$SCRIPT_DIR/news_delivery.py"
+ENV_FILE="$SCRIPT_DIR/.env"
 LOG="$SCRIPT_DIR/logs/cron.log"
 
 if [ -z "$ANTHROPIC_API_KEY" ]; then
@@ -12,11 +13,16 @@ if [ -z "$ANTHROPIC_API_KEY" ]; then
     exit 1
 fi
 
+# APIキーを .env ファイルに保存（cronから安全に読み込むため）
+echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY" > "$ENV_FILE"
+chmod 600 "$ENV_FILE"
+echo "🔑 APIキーを $ENV_FILE に保存しました（パーミッション: 600）"
+
 # pip install
 pip install -r "$SCRIPT_DIR/requirements.txt" -q
 
-# cron エントリ（毎朝7時、APIキーを環境変数として渡す）
-CRON_ENTRY="0 7 * * * ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY $PYTHON $SCRIPT >> $LOG 2>&1"
+# cron エントリ（毎朝7時、.envからAPIキーを読み込む）
+CRON_ENTRY="0 7 * * * . $ENV_FILE && $PYTHON $SCRIPT >> $LOG 2>&1"
 
 # 既存のエントリを確認して重複登録を防ぐ
 (crontab -l 2>/dev/null | grep -v "news_delivery.py"; echo "$CRON_ENTRY") | crontab -
