@@ -43,21 +43,21 @@ def fetch_news() -> str:
 
     print(f"🔍 ニュースを収集中... ({today})", flush=True)
 
-    response = client.messages.create(
-        model="claude-opus-4-6",
-        max_tokens=4096,
+    response_text = ""
+    with client.messages.stream(
+        model="claude-opus-4-7",
+        max_tokens=8192,
+        thinking={"type": "adaptive"},
         tools=[
-            {"type": "web_search_20250305", "name": "web_search"},
+            {"type": "web_search_20260209", "name": "web_search"},
         ],
         messages=[{"role": "user", "content": prompt}],
-    )
+    ) as stream:
+        for text in stream.text_stream:
+            print(text, end="", flush=True)
+            response_text += text
 
-    response_text = ""
-    for block in response.content:
-        if block.type == "text":
-            print(block.text, flush=True)
-            response_text += block.text
-
+    print(flush=True)
     return response_text
 
 
