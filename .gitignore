@@ -134,6 +134,10 @@ celerybeat.pid
 # SageMath parsed files
 *.sage.py
 
+# Daily news logs and secrets
+daily_news/logs/
+daily_news/.env
+
 # Environments
 .env
 .envrc
