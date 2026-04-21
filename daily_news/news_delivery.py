@@ -46,8 +46,9 @@ def fetch_news() -> str:
     response_text = ""
     with client.messages.stream(
         model="claude-opus-4-7",
-        max_tokens=16000,
+        max_tokens=32000,
         thinking={"type": "adaptive"},
+        output_config={"effort": "high"},
         tools=[
             {"type": "web_search_20260209", "name": "web_search"},
         ],
