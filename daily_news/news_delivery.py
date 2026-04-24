@@ -58,6 +58,17 @@ def fetch_news() -> str:
             print(text, end="", flush=True)
             response_text += text
 
+        final_message = stream.get_final_message()
+
+    if final_message.stop_reason == "pause_turn":
+        print("\n⚠️ ウェブ検索の上限に達しました。収集できた範囲でまとめます。", flush=True)
+
+    usage = final_message.usage
+    print(
+        f"\n📊 トークン使用量: 入力 {usage.input_tokens}, 出力 {usage.output_tokens}",
+        flush=True,
+    )
+
     print(flush=True)
     return response_text
 
