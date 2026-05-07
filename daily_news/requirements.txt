@@ -1,1 +1,2 @@
 anthropic>=0.92.0
+schedule>=1.2.0
