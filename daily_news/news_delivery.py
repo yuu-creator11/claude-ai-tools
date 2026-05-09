@@ -10,6 +10,8 @@ from pathlib import Path
 LOG_DIR = Path(__file__).parent / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
+MAX_CONTINUATIONS = 5
+
 
 def fetch_news() -> str:
     client = anthropic.Anthropic()
@@ -43,24 +45,34 @@ def fetch_news() -> str:
 
     print(f"🔍 ニュースを収集中... ({today})", flush=True)
 
+    messages = [{"role": "user", "content": prompt}]
     response_text = ""
-    with client.messages.stream(
-        model="claude-opus-4-7",
-        max_tokens=32000,
-        thinking={"type": "adaptive"},
-        output_config={"effort": "high"},
-        tools=[
-            {"type": "web_search_20260209", "name": "web_search"},
-        ],
-        messages=[{"role": "user", "content": prompt}],
-    ) as stream:
-        for text in stream.text_stream:
-            print(text, end="", flush=True)
-            response_text += text
+    final_message = None
 
-        final_message = stream.get_final_message()
+    for _ in range(MAX_CONTINUATIONS):
+        with client.messages.stream(
+            model="claude-opus-4-7",
+            max_tokens=32000,
+            thinking={"type": "adaptive"},
+            output_config={"effort": "high"},
+            tools=[
+                {"type": "web_search_20260209", "name": "web_search"},
+            ],
+            messages=messages,
+        ) as stream:
+            for text in stream.text_stream:
+                print(text, end="", flush=True)
+                response_text += text
 
-    if final_message.stop_reason == "pause_turn":
+            final_message = stream.get_final_message()
+
+        if final_message.stop_reason != "pause_turn":
+            break
+
+        print("\n⚠️ ウェブ検索を継続中...", flush=True)
+        messages.append({"role": "assistant", "content": final_message.content})
+
+    if final_message and final_message.stop_reason == "pause_turn":
         print("\n⚠️ ウェブ検索の上限に達しました。収集できた範囲でまとめます。", flush=True)
 
     usage = final_message.usage
